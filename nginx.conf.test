@@ -1,0 +1,36 @@
+# Use the official NGINX image from Docker Hub
+FROM nginx:latest
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    gettext-base \
+    curl \
+    && apt-get clean
+
+# Copy the custom NGINX configuration template file to the container
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+
+# Copy SSL certificates to the container
+COPY server.crt /etc/ssl/certs/server.crt
+COPY server.key /etc/ssl/private/server.key
+# Optional: Copy the certificate chain
+COPY server-ca.crt /etc/ssl/certs/server-ca.crt
+
+# Download and install additional CA certificates from Artifactory
+RUN bash -c '\
+    export CACERTS_LATEST=$(curl -sfL "https://artifactory.awstrp.net/artifactory/api/search/LatestVersion?g=com.trp.es.cacerts&a=cacerts&repos=libs-release-local&v=*" | jq -r .version); \
+    curl -O "https://artifactory.awstrp.net/artifactory/libs-release-local/com/trp/es/cacerts/cacerts/${CACERTS_LATEST}/cacerts-${CACERTS_LATEST}.tgz"; \
+    tar -xf cacerts-${CACERTS_LATEST}.tgz -C /usr/local/share/ca-certificates/; \
+    update-ca-certificates; \
+    rm cacerts-${CACERTS_LATEST}.tgz; \
+    echo "Installed cacerts-${CACERTS_LATEST}";'
+
+# Set the default environment variable for proxy_pass
+ENV BACKEND_URL http://unity-tooling.dev.awstrp.net
+
+# Substitute environment variables in the NGINX configuration file
+CMD ["/bin/sh", "-c", "envsubst '$BACKEND_URL' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+
+# Expose port 80 and 443 to the outside world
+EXPOSE 80
+EXPOSE 443
