@@ -34,3 +34,10 @@ CMD ["/bin/sh", "-c", "envsubst '$BACKEND_URL' < /etc/nginx/nginx.conf.template 
 # Expose port 80 and 443 to the outside world
 EXPOSE 80
 EXPOSE 443
+
+
+    location = /health {
+            access_log off;
+            add_header 'Content-Type' 'application/json';
+            return 200 '{"status":"UP"}';
+    }
