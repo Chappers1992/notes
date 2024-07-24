@@ -1,82 +1,37 @@
-# Use the official NGINX image from Docker Hub
-FROM nginx:latest
+# SonarQube Nginx Redirect Container
 
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
-    gettext-base \
-    curl \
-    && apt-get clean
+This repository contains a Docker image configuration for an Nginx server that redirects requests to a SonarQube instance. The image is designed to be configurable, allowing you to specify the target SonarQube URL at runtime.
 
-# Copy the custom NGINX configuration template file to the container
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
+## Contents
 
-# Copy SSL certificates to the container
-COPY server.crt /etc/ssl/certs/server.crt
-COPY server.key /etc/ssl/private/server.key
-# Optional: Copy the certificate chain
-COPY server-ca.crt /etc/ssl/certs/server-ca.crt
+- `Dockerfile`: Defines the Docker image build process
+- `nginx.conf`: Nginx configuration template
+- `docker-entrypoint.sh`: Entrypoint script for container initialization
 
-# Download and install additional CA certificates from Artifactory
-RUN bash -c '\
-    export CACERTS_LATEST=$(curl -sfL "https://artifactory.awstrp.net/artifactory/api/search/LatestVersion?g=com.trp.es.cacerts&a=cacerts&repos=libs-release-local&v=*" | jq -r .version); \
-    curl -O "https://artifactory.awstrp.net/artifactory/libs-release-local/com/trp/es/cacerts/cacerts/${CACERTS_LATEST}/cacerts-${CACERTS_LATEST}.tgz"; \
-    tar -xf cacerts-${CACERTS_LATEST}.tgz -C /usr/local/share/ca-certificates/; \
-    update-ca-certificates; \
-    rm cacerts-${CACERTS_LATEST}.tgz; \
-    echo "Installed cacerts-${CACERTS_LATEST}";'
+## Features
 
-# Set the default environment variable for proxy_pass
-ENV BACKEND_URL http://unity-tooling.dev.awstrp.net
+- Redirects requests from `/sonarqube/*` to a configurable SonarQube URL
+- Uses environment variables to set the target SonarQube URL at runtime
+- Based on the official Nginx Alpine image for a small footprint
 
-# Substitute environment variables in the NGINX configuration file
-CMD ["/bin/sh", "-c", "envsubst '$BACKEND_URL' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+## Usage
 
-# Expose port 80 and 443 to the outside world
-EXPOSE 80
-EXPOSE 443
+### Building the Image
 
+To build the Docker image:
 
+```bash
+docker build -t sonarqube-nginx-redirect .
+Running the Container
+To run the container, specifying your SonarQube URL:
+bashCopydocker run -d -p 80:80 -e RETURN_URL_BASE=https://your-sonarqube-url.com sonarqube-nginx-redirect
+Replace https://your-sonarqube-url.com with the actual URL of your SonarQube instance.
+Configuration
+The following environment variable can be set when running the container:
 
-worker_processes 1;
+RETURN_URL_BASE: The base URL of your SonarQube instance (e.g., https://sonarqube.example.com)
 
-events {
-    worker_connections 1024;
-}
-
-http {
-    server {
-        listen 80;
-        server_name unity.test.awstrp.net;
-
-        location /sonarqube/ {
-            rewrite ^/sonarqube/(.*)$ /$1 break;
-            proxy_pass http://sonarqube.unity-tooling.dev.awstrp.net;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location = /sonar-nginx/health {
-            access_log off;
-            default_type application/json;
-            return 200 '{"status":"UP"}';
-        }
-    }
-}
-
-
-
-    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
-                    '$status $body_bytes_sent "$http_referer" '
-                    '"$http_user_agent" "$http_x_forwarded_for" '
-                    '$upstream_addr $upstream_status $upstream_response_time '
-                    '$request_time';
-
-    access_log /var/log/nginx/access.log main;
-
-    error_log /var/log/nginx/error.log debug;
-
-
-            access_log /var/log/nginx/sonarqube_access.log main;
-            error_log /var/log/nginx/sonarqube_error.log debug;
+Nginx Configuration
+The Nginx configuration redirects all requests starting with /sonarqube/ to the specified SonarQube URL, preserving the path after /sonarqube/.
+Customization
+To customize the Nginx configuration, modify the nginx.conf file before building the image. The docker-entrypoint.sh script processes this file to replace the RETURN_URL_BASE_PLACEHOLDER with the actual URL provided at runtime.
