@@ -1,0 +1,52 @@
+from flask import Flask, request, jsonify
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+# Initialize Sentry
+sentry_sdk.init(
+    dsn="YOUR_SENTRY_DSN_HERE",  # Replace with your actual Sentry DSN
+    integrations=[FlaskIntegration()],
+    traces_sample_rate=1.0,  # Adjust for performance monitoring
+)
+
+# Initialize Flask
+app = Flask(__name__)
+
+# A simple route that will trigger an error
+@app.route('/divide', methods=['GET'])
+def divide():
+    try:
+        # Get parameters from the request
+        a = float(request.args.get('a'))
+        b = float(request.args.get('b'))
+
+        # Perform the division
+        result = a / b
+        return jsonify({"result": result})
+
+    except ZeroDivisionError as e:
+        # Capture the exception in Sentry
+        sentry_sdk.capture_exception(e)
+
+        # Return an error message
+        return jsonify({"error": "Cannot divide by zero!"}), 400
+
+    except Exception as e:
+        # Capture any other exceptions in Sentry
+        sentry_sdk.capture_exception(e)
+
+        # Return a generic error message
+        return jsonify({"error": "An error occurred!"}), 500
+
+# A simple home route
+@app.route('/')
+def home():
+    return '''
+        <h1>Sentry Flask Demo</h1>
+        <p>Use the /divide endpoint to perform a division.</p>
+        <p>Example: /divide?a=10&b=2</p>
+        <p>Try causing an error by dividing by zero: /divide?a=10&b=0</p>
+    '''
+
+if __name__ == '__main__':
+    app.run(debug=True)
