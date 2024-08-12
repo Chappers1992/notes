@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Number Game</title>
+    <!-- Include Sentry JavaScript SDK -->
+    <script src="https://browser.sentry-cdn.com/7.4.0/bundle.min.js" integrity="sha384-F6CxDFlQWcI/FU/cJPoJZ5SKlkrzXg6KUMS4lQoyQzFlMiQhMPJw5Bl03r5a1mVZ" crossorigin="anonymous"></script>
+    <script>
+        // Initialize Sentry
+        Sentry.init({ 
+            dsn: 'YOUR_SENTRY_DSN_HERE',  // Replace with your actual Sentry DSN
+            integrations: [new Sentry.BrowserTracing()],
+            tracesSampleRate: 1.0
+        });
+
+        let transactionId = null;
+
+        async function startGame() {
+            transactionId = generateTransactionId();
+            Sentry.configureScope(scope => {
+                scope.setTag("transaction_id", transactionId);
+            });
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ transaction_id: transactionId })
+                });
+                const data = await response.json();
+                document.getElementById('status').innerText = data.message;
+                document.getElementById('transaction').innerText = `Transaction ID: ${transactionId}`;
+            } catch (error) {
+                Sentry.captureException(error);
+                document.getElementById('status').innerText = 'Failed to start the game. Check your console for errors.';
+            }
+        }
+
+        async function guessNumber() {
+            const number = document.getElementById('guess').value;
+
+            Sentry.configureScope(scope => {
+                scope.setTag("transaction_id", transactionId);
+                scope.setExtra("guessed_number", number);
+            });
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/guess', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ number: number, transaction_id: transactionId })
+                });
+                const data = await response.json();
+                document.getElementById('status').innerText = data.message || data.error;
+                document.getElementById('transaction').innerText = `Transaction ID: ${transactionId}`;
+            } catch (error) {
+                Sentry.captureException(error);
+                document.getElementById('status').innerText = 'Failed to submit the guess. Check your console for errors.';
+            }
+        }
+
+        function generateTransactionId() {
+            return 'txn_' + Math.random().toString(36).substr(2, 9);
+        }
+    </script>
+</head>
+<body>
+    <h1>Guess the Number Game</h1>
+    <button onclick="startGame()">Start Game</button>
+    <br><br>
+    <input type="number" id="guess" placeholder="Enter your guess">
+    <button onclick="guessNumber()">Submit Guess</button>
+    <p id="status"></p>
+    <p id="transaction"></p>
+</body>
+</html>
