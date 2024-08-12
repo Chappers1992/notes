@@ -7,7 +7,7 @@ from flask_cors import CORS
 
 # Initialize Sentry
 sentry_sdk.init(
-    dsn="YOUR_SENTRY_DSN_HERE",  # Replace with your actual Sentry DSN
+    dsn="https://080e319c50e64735b06f0bf4dfe86dae@sentry.unity-tooling.dev.awstrp.net/7",
     integrations=[FlaskIntegration()],
     traces_sample_rate=1.0,
 )
