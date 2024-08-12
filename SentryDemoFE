@@ -44,37 +44,38 @@
         }
     }
 
-    async function guessNumber() {
-        const number = document.getElementById('guess').value;
+async function guessNumber() {
+    const number = document.getElementById('guess').value;
 
-        Sentry.configureScope(scope => {
-            scope.setTag("transaction_id", transactionId);
-            scope.setExtra("guessed_number", number);
+    Sentry.configureScope(scope => {
+        scope.setTag("transaction_id", transactionId);
+        scope.setExtra("guessed_number", number);
+    });
+
+    try {
+        const response = await fetch('http://127.0.0.1:5000/guess', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ number: number, transaction_id: transactionId })
         });
 
-        try {
-            const response = await fetch('http://127.0.0.1:5000/guess', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ number: number, transaction_id: transactionId })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to submit the guess');
-            }
-
-            const data = await response.json();
-            document.getElementById('status').innerText = data.message || data.error;
-            document.getElementById('transaction').innerText = `Transaction ID: ${transactionId}`;
-        } catch (error) {
-            Sentry.captureException(error);
-            document.getElementById('status').innerText = 'Failed to submit the guess. Check your console for errors.';
-            console.error('Error in guessNumber:', error);
+        if (!response.ok) {
+            const errorData = await response.json();
+            const errorMessage = errorData.error || 'Failed to submit the guess';
+            throw new Error(errorMessage);  // Throw error to be caught in catch block
         }
+
+        const data = await response.json();
+        document.getElementById('status').innerText = data.message || data.error;
+        document.getElementById('transaction').innerText = `Transaction ID: ${transactionId}`;
+    } catch (error) {
+        console.error('Error in guessNumber:', error);  // Log to console for debugging
+        Sentry.captureException(error);  // Ensure error is sent to Sentry
+        document.getElementById('status').innerText = 'Failed to submit the guess. Check your console for errors.';
     }
+}
 
     function generateTransactionId() {
         return 'txn_' + Math.random().toString(36).substr(2, 9);
