@@ -1,0 +1,63 @@
+import random
+from flask import Flask, request, jsonify, session
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+# Initialize Sentry
+sentry_sdk.init(
+    dsn="YOUR_SENTRY_DSN_HERE",  # Replace with your actual Sentry DSN
+    integrations=[FlaskIntegration()],
+    traces_sample_rate=1.0,
+)
+
+# Initialize Flask
+app = Flask(__name__)
+app.secret_key = "supersecretkey"  # Needed to use sessions in Flask
+
+# Route to start or reset the game
+@app.route('/start', methods=['GET'])
+def start_game():
+    session['number'] = random.randint(1, 100)
+    session['attempts'] = 0
+    return jsonify({"message": "Game started! Guess a number between 1 and 100."})
+
+# Route to guess a number
+@app.route('/guess', methods=['GET'])
+def guess_number():
+    try:
+        session['attempts'] += 1
+        guess = int(request.args.get('number'))
+
+        if guess < 1 or guess > 100:
+            raise ValueError("Guess must be between 1 and 100.")
+
+        if guess < session['number']:
+            return jsonify({"message": "Too low! Try again."})
+        elif guess > session['number']:
+            return jsonify({"message": "Too high! Try again."})
+        else:
+            attempts = session['attempts']
+            session.pop('number', None)  # Reset the game
+            session.pop('attempts', None)
+            return jsonify({"message": f"Congratulations! You guessed the number in {attempts} attempts."})
+
+    except ValueError as e:
+        sentry_sdk.capture_exception(e)
+        return jsonify({"error": str(e)}), 400
+
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        return jsonify({"error": "An unexpected error occurred!"}), 500
+
+# Home route
+@app.route('/')
+def home():
+    return '''
+        <h1>Guess the Number Game</h1>
+        <p>Start the game by visiting <a href="/start">/start</a>.</p>
+        <p>Then, guess the number by visiting <code>/guess?number=your_guess</code>.</p>
+        <p>Example: <a href="/guess?number=50">/guess?number=50</a></p>
+    '''
+
+if __name__ == '__main__':
+    app.run(debug=True)
