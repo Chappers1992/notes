@@ -1,7 +1,9 @@
 import random
+import uuid
 from flask import Flask, request, jsonify, session
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
+from flask_cors import CORS
 
 # Initialize Sentry
 sentry_sdk.init(
@@ -12,55 +14,44 @@ sentry_sdk.init(
 
 # Initialize Flask
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Needed to use sessions in Flask
+app.secret_key = "supersecretkey"
+CORS(app)  # Enable CORS for the frontend to interact with the backend
 
 # Route to start or reset the game
-@app.route('/start', methods=['GET'])
+@app.route('/start', methods=['POST'])
 def start_game():
+    """
+    Start a new game or reset the current game.
+    """
+    transaction_id = request.json.get('transaction_id')  # Get the transaction_id from the request body
+    session['transaction_id'] = transaction_id
     session['number'] = random.randint(1, 100)
     session['attempts'] = 0
-    return jsonify({"message": "Game started! Guess a number between 1 and 100."})
+    return jsonify({"message": "Game started! Guess a number between 1 and 100.", "transaction_id": transaction_id})
 
 # Route to guess a number
-@app.route('/guess', methods=['GET'])
+@app.route('/guess', methods=['POST'])
 def guess_number():
+    """
+    Guess the number in the current game.
+    """
+    transaction_id = session.get('transaction_id')  # Retrieve the transaction_id from the session
     try:
         session['attempts'] += 1
-        guess = int(request.args.get('number'))
+        guess = int(request.json.get('number'))  # Get the guessed number from the request body
 
         if guess < 1 or guess > 100:
             raise ValueError("Guess must be between 1 and 100.")
 
         if guess < session['number']:
-            return jsonify({"message": "Too low! Try again."})
+            return jsonify({"message": "Too low! Try again.", "transaction_id": transaction_id})
         elif guess > session['number']:
-            return jsonify({"message": "Too high! Try again."})
+            return jsonify({"message": "Too high! Try again.", "transaction_id": transaction_id})
         else:
             attempts = session['attempts']
             session.pop('number', None)  # Reset the game
             session.pop('attempts', None)
-            return jsonify({"message": f"Congratulations! You guessed the number in {attempts} attempts."})
-
-    except ValueError as e:
-        sentry_sdk.capture_exception(e)
-        return jsonify({"error": str(e)}), 400
-
-    except Exception as e:
-        sentry_sdk.capture_exception(e)
-        return jsonify({"error": "An unexpected error occurred!"}), 500
-
-# Home route
-@app.route('/')
-def home():
-    return '''
-        <h1>Guess the Number Game</h1>
-        <p>Start the game by visiting <a href="/start">/start</a>.</p>
-        <p>Then, guess the number by visiting <code>/guess?number=your_guess</code>.</p>
-        <p>Example: <a href="/guess?number=50">/guess?number=50</a></p>
-    '''
-
-if __name__ == '__main__':
-    app.run(debug=True)
+            return jsonify({"message": f"Congratulations! You guessed the number in {attempts} attempts.", "transaction_id": transaction_id})
 
     except ValueError as e:
         sentry_sdk.set_tag("transaction_id", transaction_id)
@@ -72,3 +63,13 @@ if __name__ == '__main__':
         sentry_sdk.capture_exception(e)
         return jsonify({"error": "An unexpected error occurred!", "transaction_id": transaction_id}), 500
 
+# Home route
+@app.route('/')
+def home():
+    return '''
+        <h1>Guess the Number Game API</h1>
+        <p>Use the frontend to play the game.</p>
+    '''
+
+if __name__ == '__main__':
+    app.run(debug=True)
