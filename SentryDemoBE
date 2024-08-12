@@ -61,3 +61,14 @@ def home():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+    except ValueError as e:
+        sentry_sdk.set_tag("transaction_id", transaction_id)
+        sentry_sdk.capture_exception(e)
+        return jsonify({"error": str(e), "transaction_id": transaction_id}), 400
+
+    except Exception as e:
+        sentry_sdk.set_tag("transaction_id", transaction_id)
+        sentry_sdk.capture_exception(e)
+        return jsonify({"error": "An unexpected error occurred!", "transaction_id": transaction_id}), 500
+
