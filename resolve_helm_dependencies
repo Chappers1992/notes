@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Usage: ./resolve_dependencies.sh /path/to/kube-prometheus-stack /path/to/prometheus-community-helm-charts
+
+KUBE_PROMETHEUS_STACK_PATH=$1
+PROMETHEUS_COMMUNITY_DIR=$2
+
+if [[ ! -d "$KUBE_PROMETHEUS_STACK_PATH" ]]; then
+    echo "The specified kube-prometheus-stack path does not exist!"
+    exit 1
+fi
+
+if [[ ! -d "$PROMETHEUS_COMMUNITY_DIR" ]]; then
+    echo "The specified prometheus-community-helm-charts directory does not exist!"
+    exit 1
+fi
+
+# Parse the dependencies from the Chart.yaml using grep and awk
+DEPENDENCIES=$(grep -A1 'dependencies:' "$KUBE_PROMETHEUS_STACK_PATH/Chart.yaml" | grep 'name:' | awk '{print $2}')
+
+if [[ -z "$DEPENDENCIES" ]]; then
+    echo "No dependencies found in Chart.yaml."
+    exit 0
+fi
+
+# Create the charts/ directory if it doesn't exist
+mkdir -p "$KUBE_PROMETHEUS_STACK_PATH/charts"
+
+# Loop through each dependency
+for DEP in $DEPENDENCIES; do
+    # Check if the dependency exists in the prometheus-community-helm-charts directory
+    DEP_DIR=$(find "$PROMETHEUS_COMMUNITY_DIR" -maxdepth 1 -type d -name "$DEP")
+
+    if [[ -d "$DEP_DIR" ]]; then
+        echo "Found $DEP in $PROMETHEUS_COMMUNITY_DIR, copying to charts/ directory..."
+        cp -R "$DEP_DIR" "$KUBE_PROMETHEUS_STACK_PATH/charts/"
+    else
+        echo "$DEP not found in $PROMETHEUS_COMMUNITY_DIR. You may need to fetch it manually."
+    fi
+done
+
+echo "Dependency resolution complete."
