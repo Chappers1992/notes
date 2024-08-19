@@ -1,9 +1,17 @@
-We are pleased to inform you that the migration of our SonarQube server to the new EKS-based infrastructure has been successfully completed. The service is now fully operational.
+Make release versions of Helm/Release values/Nginx
 
-Key Points:
+Deploy a dev instance to prod - targeting dev DB
 
-The SonarQube server is now running on the new EKS environment.
-If your GitLab pipeline failed during the migration window, rerunning the pipeline should now result in a successful job.
-Please monitor your pipelines and let us know if you encounter any issues or experience any unexpected behavior with SonarQube. We’ll be on standby to assist with any concerns.
+Validate the infrastructure - make sure everything is working as expected
 
-Thank you again for your understanding and cooperation during this migration.
+Bring down dev in prod
+
+Alter config to deploy Prod equiv 
+
+Turn off ECS server
+
+Deploy the Prod instance 
+
+Deploy NGINX to redirect traffic
+
+Test the production deployment
