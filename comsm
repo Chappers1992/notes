@@ -1,0 +1,12 @@
+We are in the process of migrating our SonarQube server from the current EC2 instance to an EKS-based setup in order to improve scalability and performance. This change is planned to be seamless, but there will be a brief window of downtime during the switch.
+
+Migration Details:
+
+Date/Time of Migration: [Insert Date and Time]
+Expected Downtime: 30 minutes or less
+Impact on GitLab Pipelines: Any GitLab pipelines running during the migration, particularly those involving SonarQube analysis, may fail during the downtime window. Once the migration is complete, rerunning the pipeline should result in a successful job.
+If you encounter any pipeline issues post-migration, please let us know so we can investigate and ensure a smooth transition.
+
+We appreciate your understanding and cooperation during this process. If you have any questions or concerns, feel free to reach out to us.
+
+Thank you for your patience as we work to enhance our infrastructure.
