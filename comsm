@@ -1,17 +1,34 @@
-Make release versions of Helm/Release values/Nginx
+SonarQube Migration Plan: EKS Deployment
+The following steps outline the migration plan to transition the SonarQube server from its current EC2/ECS environment to the new EKS-based infrastructure. Each action item will be executed in sequence to ensure a smooth and minimally disruptive deployment.
 
-Deploy a dev instance to prod - targeting dev DB
+Prepare Release Versions
 
-Validate the infrastructure - make sure everything is working as expected
+Create release versions for Helm charts and update release values.
+Configure Nginx settings to align with the new deployment environment.
+Deploy Dev Instance in Production (Targeting Dev Database)
 
-Bring down dev in prod
+Deploy a development instance of SonarQube in the production environment, connected to the development database.
+This deployment will serve as a test of the production infrastructure.
+Validate Infrastructure
 
-Alter config to deploy Prod equiv 
+Perform a thorough validation of the newly deployed infrastructure.
+Ensure all components (SonarQube instance, database connectivity, Nginx configuration, etc.) are functioning as expected.
+Tear Down Dev Instance in Production
 
-Turn off ECS server
+Once validation is complete, bring down the development instance in the production environment to prepare for the production deployment.
+Adjust Configuration for Production Deployment
 
-Deploy the Prod instance 
+Modify the configuration files to reflect the production environment equivalent (database, network settings, and any other environment-specific parameters).
+Decommission ECS Server
 
-Deploy NGINX to redirect traffic
+Shut down the current ECS-based SonarQube server to avoid conflicts and prepare for the new deployment.
+Deploy Production SonarQube Instance
 
-Test the production deployment
+Deploy the production instance of SonarQube to the EKS infrastructure with the updated configuration.
+Deploy Nginx for Traffic Redirection
+
+Deploy Nginx in the production environment to redirect incoming traffic from the previous ECS-based server to the new EKS-based instance.
+Test Production Deployment
+
+Conduct comprehensive tests on the production deployment to ensure that SonarQube is working as intended.
+Validate that GitLab pipelines and other services are functioning without issues post-deployment.
