@@ -1,9 +1,9 @@
-We wanted to provide a quick update regarding the SonarQube migration that is currently in progress. Unfortunately, we are encountering some unexpected issues during the migration process, which is causing a delay in restoring full functionality to the SonarQube server.
+We are pleased to inform you that the migration of our SonarQube server to the new EKS-based infrastructure has been successfully completed. The service is now fully operational.
 
-Impact:
+Key Points:
 
-SonarQube is currently unavailable.
-GitLab pipelines running SonarQube analysis will fail during this period.
-Please bear with us as we work to resolve the issue. We are actively investigating and will notify you as soon as the service is back online.
+The SonarQube server is now running on the new EKS environment.
+If your GitLab pipeline failed during the migration window, rerunning the pipeline should now result in a successful job.
+Please monitor your pipelines and let us know if you encounter any issues or experience any unexpected behavior with SonarQube. We’ll be on standby to assist with any concerns.
 
-We sincerely apologize for any inconvenience this may cause and appreciate your patience. If you have any concerns, please don't hesitate to reach out.
+Thank you again for your understanding and cooperation during this migration.
