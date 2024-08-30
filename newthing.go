@@ -1,44 +1,3 @@
-package rest
-
-import (
-	"bytes"
-	"crypto/tls"
-	"encoding/base64"
-	"github.com/pkg/errors"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
-	"troweprice.io/ea/unity/unity-cli/cmd/logger"
-	"fmt"
-)
-
-type Option func(*HttpClient) error
-
-type RequestDetail struct {
-	Method string
-	Path   string
-	Body   []byte
-}
-
-type HttpClient struct {
-	httpClient   *http.Client
-	baseURL      string
-	userId       string
-	token        string
-	tokenType    TokenType
-	useHttps     bool
-	useOpaqueURL bool
-}
-
-type TokenType int8
-
-const (
-	Bear TokenType = iota
-	Basic
-	GitlabPrivate
-)
-
 func (h *HttpClient) Request(info *RequestDetail, headers ...string) (*http.Response, error) {
 	// If httpClient hasn't been initialized with custom redirect handling, do it now
 	if h.httpClient.CheckRedirect == nil {
@@ -64,7 +23,7 @@ func (h *HttpClient) Request(info *RequestDetail, headers ...string) (*http.Resp
 			req.Header.Set("Authorization", "Bearer "+h.token)
 		case Basic:
 			auth := h.token
-			if !strings.Contains(h.token, ":") {
+			if !strings.Contains(auth, ":") {
 				auth += ":"
 			}
 			req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
@@ -96,113 +55,31 @@ func (h *HttpClient) Request(info *RequestDetail, headers ...string) (*http.Resp
 		return nil, err
 	}
 
-	fmt.Printf("Response Status: %s\n", resp.Status)
-	fmt.Printf("Response Headers: %v\n", resp.Header)
+	// Handle manual redirects
+	if resp.StatusCode == http.StatusMovedPermanently || resp.StatusCode == http.StatusFound ||
+		resp.StatusCode == http.StatusSeeOther || resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
 
-	return resp, nil
-}
-
-func AuthTokenOption(tokenType TokenType, token string) Option {
-	return func(httpClient *HttpClient) error {
-		httpClient.tokenType = tokenType
-		httpClient.token = token
-		return nil
-	}
-}
-
-func EnableHttpsOption() Option {
-	return func(httpClient *HttpClient) error {
-		httpClient.useHttps = true
-		return nil
-	}
-}
-
-func SkipTLSVerifyOption() Option {
-	return func(httpClient *HttpClient) error {
-		httpClient.httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		return nil
-	}
-}
-
-func UserIdOption(userId string) Option {
-	return func(httpClient *HttpClient) error {
-		if userId != "" {
-			httpClient.userId = userId
-		}
-		return nil
-	}
-}
-
-func BaseUrlOption(baseUrl string) Option {
-	return func(httpClient *HttpClient) error {
-		if baseUrl == "" {
-			return errors.New("base URL is required")
-		}
-		httpClient.baseURL = baseUrl
-		return nil
-	}
-}
-
-func UseOpaqueUrlOption() Option {
-	return func(httpClient *HttpClient) error {
-		httpClient.useOpaqueURL = true
-		return nil
-	}
-}
-
-func NewHttpClientWithOptions(options ...Option) (*HttpClient, error) {
-	httpClient := &HttpClient{
-		httpClient: &http.Client{
-			Timeout: time.Second * 60,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if len(via) > 0 {
-					for key, values := range via[0].Header {
-						req.Header[key] = values
-					}
-				}
-				return nil
-			},
-		},
-	}
-
-	for _, option := range options {
-		err := option(httpClient)
+		location, err := resp.Location()
 		if err != nil {
+			return nil, err
+		}
+
+		// Create a new request to the redirect location
+		req.URL = location
+		resp.Body.Close() // Close the previous response body
+
+		fmt.Printf("Redirecting to: %s\n", location.String())
+
+		// Issue the new request
+		resp, err = h.httpClient.Do(req)
+		if err != nil {
+			fmt.Printf("Error making redirected request: %v\n", err)
 			return nil, err
 		}
 	}
 
-	logger.Debugf("Create a httpClient with baseURL '%s', userID '%s', and https %t",
-		httpClient.baseURL, httpClient.userId, httpClient.useHttps)
+	fmt.Printf("Response Status: %s\n", resp.Status)
+	fmt.Printf("Response Headers: %v\n", resp.Header)
 
-	return httpClient, nil
-}
-
-func createRequestURL(p *HttpClient, urlPath string) string {
-	scheme := "https"
-	if !p.useHttps {
-		scheme = "http"
-	}
-
-	query := ""
-	if p.userId != "" {
-		parse, _ := url.Parse("userId=" + p.userId)
-		query = parse.String()
-	}
-
-	opaque := ""
-	if p.useOpaqueURL {
-		opaque = "//" + p.baseURL + urlPath
-	}
-	urlObj := url.URL{
-		Scheme:   scheme,
-		Host:     p.baseURL,
-		Path:     urlPath,
-		Opaque:   opaque,
-		RawQuery: query,
-	}
-
-	return urlObj.String()
+	return resp, nil
 }
