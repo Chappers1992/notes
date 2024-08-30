@@ -1,0 +1,108 @@
+→  ~/unity-cli $ curl -L -x POST -v https://unity.test.awstrp.net/sonarqube/api/alm_settings/update_gitlab?newKey=unity_gitlab&key=unity_gitlab&url=https://gitlab-np.awstrp.net/api/v4&personalAccessToken=6FewE_AqCftzc62g8g2i -H "Content-Type: application/json" 
+[1] 3275052
+[2] 3275053
+[3] 3275054
+* Uses proxy env variable no_proxy == '::1,10.0.0.0/8,127.0.0.1,127.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.awstrp.net,.local,localhost,.trowe2.com,.trowe3.com,.troweprice.com,.troweprice.io,.troweprice.net,.trowepricequal.net,.trowepricedev.net'
+* Host unity.test.awstrp.net:443 was resolved.
+* IPv6: (none)
+* IPv4: 10.250.35.145, 10.250.37.75, 10.250.38.94
+*   Trying 10.250.35.145:443...
+* Connected to unity.test.awstrp.net (10.250.35.145) port 443
+-H: command not found
+[2]-  Done                    key=unity_gitlab
+[3]+  Done                    url=https://gitlab-np.awstrp.net/api/v4
+→  ~/unity-cli $ * ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+*  CAfile: /etc/ssl/certs/ca-certificates.crt
+*  CApath: none
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / rsaEncryption
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=unity-green-cluster.ecs.us-east-1.trp-deployment-np.awstrp.net
+*  start date: Oct  5 12:16:58 2023 GMT
+*  expire date: Oct  4 12:17:27 2024 GMT
+*  subjectAltName: host "unity.test.awstrp.net" matched cert's "unity.test.awstrp.net"
+*  issuer: CN=T. Rowe Price Vault Intermediate CA
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type RSA (4096/152 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (4096/152 Bits/secBits), signed using sha256WithRSAEncryption
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://unity.test.awstrp.net/sonarqube/api/alm_settings/update_gitlab?newKey=unity_gitlab
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: unity.test.awstrp.net]
+* [HTTP/2] [1] [:path: /sonarqube/api/alm_settings/update_gitlab?newKey=unity_gitlab]
+* [HTTP/2] [1] [user-agent: curl/8.7.1]
+* [HTTP/2] [1] [accept: */*]
+> GET /sonarqube/api/alm_settings/update_gitlab?newKey=unity_gitlab HTTP/2
+> Host: unity.test.awstrp.net
+> User-Agent: curl/8.7.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/2 302 
+< date: Fri, 30 Aug 2024 14:34:54 GMT
+< content-type: text/html
+< content-length: 145
+< location: https://sonarqube.unity-tooling.dev.awstrp.net/api/alm_settings/update_gitlab?newKey=unity_gitlab
+< server: nginx/1.25.2
+< 
+* Ignoring the response-body
+* Connection #0 to host unity.test.awstrp.net left intact
+* Issue another request to this URL: 'https://sonarqube.unity-tooling.dev.awstrp.net/api/alm_settings/update_gitlab?newKey=unity_gitlab'
+* Uses proxy env variable no_proxy == '::1,10.0.0.0/8,127.0.0.1,127.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.awstrp.net,.local,localhost,.trowe2.com,.trowe3.com,.troweprice.com,.troweprice.io,.troweprice.net,.trowepricequal.net,.trowepricedev.net'
+* Host sonarqube.unity-tooling.dev.awstrp.net:443 was resolved.
+* IPv6: (none)
+* IPv4: 10.252.175.117, 10.252.171.183, 10.252.165.246, 10.252.173.165, 10.252.166.87
+*   Trying 10.252.175.117:443...
+* Connected to sonarqube.unity-tooling.dev.awstrp.net (10.252.175.117) port 443
+* ALPN: curl offers h2,http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES128-GCM-SHA256 / secp256r1 / rsaEncryption
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=sonarqube.unity-tooling.dev.awstrp.net
+*  start date: Jun 14 09:14:25 2024 GMT
+*  expire date: Jun 14 09:14:54 2025 GMT
+*  subjectAltName: host "sonarqube.unity-tooling.dev.awstrp.net" matched cert's "sonarqube.unity-tooling.dev.awstrp.net"
+*  issuer: CN=T. Rowe Price Vault Intermediate CA
+*  SSL certificate verify ok.
+*   Certificate level 0: Public key type RSA (4096/152 Bits/secBits), signed using sha256WithRSAEncryption
+*   Certificate level 1: Public key type RSA (4096/152 Bits/secBits), signed using sha256WithRSAEncryption
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://sonarqube.unity-tooling.dev.awstrp.net/api/alm_settings/update_gitlab?newKey=unity_gitlab
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: sonarqube.unity-tooling.dev.awstrp.net]
+* [HTTP/2] [1] [:path: /api/alm_settings/update_gitlab?newKey=unity_gitlab]
+* [HTTP/2] [1] [user-agent: curl/8.7.1]
+* [HTTP/2] [1] [accept: */*]
+> GET /api/alm_settings/update_gitlab?newKey=unity_gitlab HTTP/2
+> Host: sonarqube.unity-tooling.dev.awstrp.net
+> User-Agent: curl/8.7.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/2 405 
+< date: Fri, 30 Aug 2024 14:34:55 GMT
+< content-type: application/json
+< vary: accept-encoding
+< 
+* Connection #1 to host sonarqube.unity-tooling.dev.awstrp.net left intact
+{"errors":[{"msg":"HTTP method POST is required"}]}
