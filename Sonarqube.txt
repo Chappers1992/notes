@@ -1,0 +1,60 @@
+Adding Plugins to SonarQube Helm Chart in EKS
+As part of our migration from ECS to EKS, we need to adjust the process of adding custom plugins to SonarQube. While the Helm chart method in EKS offers a more streamlined setup overall, the process for adding plugins is slightly more cumbersome compared to our previous Docker-based approach, particularly due to the lack of variables for defining plugin versions.
+
+Prerequisites:
+Helm installed and set up to manage your Kubernetes cluster.
+Access to your EKS cluster.
+The SonarQube Helm chart repository added to your local environment.
+Step-by-Step Guide:
+1. Define Plugin Versions in values.yaml
+In our previous ECS setup, the Docker image allowed us to use environment variables to define plugin versions dynamically. Unfortunately, Helm does not support variable interpolation within values.yaml. This means you will need to hardcode the full plugin URLs, including version numbers.
+
+Here’s an example of adding a plugin using the values.yaml file:
+
+yaml
+Copy code
+# values.yaml
+
+plugins:
+  install:
+    - https://artifactory.awstrp.net/artifactory/somerustpath/v1.2.3/rust-plugin-1.2.3.jar
+    - https://artifactory.awstrp.net/artifactory/somejavapath/v6.3.2/java-plugin-6.3.2.jar
+In this approach, plugin URLs are defined explicitly, which requires you to update the URL whenever there’s a version change.
+
+2. Modifying the Helm Chart Template (If Necessary)
+If your Helm chart supports it, you can modify the deployment.yaml or any other chart template to install the plugins during SonarQube startup.
+
+For example, you can add environment variables or an init container to download the plugins:
+
+yaml
+Copy code
+# deployment.yaml
+
+initContainers:
+  - name: install-plugins
+    image: busybox
+    command:
+      - /bin/sh
+      - -c
+      - |
+        wget -O /opt/sonarqube/extensions/plugins/rust-plugin-1.2.3.jar https://artifactory.awstrp.net/artifactory/somerustpath/v1.2.3/rust-plugin-1.2.3.jar
+    volumeMounts:
+      - name: sonarqube-plugins
+        mountPath: /opt/sonarqube/extensions/plugins
+This will download the specified plugins and install them into SonarQube’s plugin directory on startup.
+
+3. Deploy SonarQube Using Helm
+Once you’ve defined your plugins in values.yaml and ensured your chart is properly configured, deploy SonarQube using Helm:
+
+bash
+Copy code
+helm install sonarqube stable/sonarqube -f values.yaml
+This will start SonarQube in your EKS cluster, with the necessary plugins installed.
+
+4. Compare to Docker-based Process
+In our previous ECS setup, adding plugins was more flexible due to Docker’s ability to use environment variables and dynamically fetch plugin versions at runtime. Unfortunately, Helm’s values.yaml file does not support this kind of dynamic templating for URLs, so we need to hardcode plugin versions in the plugin URLs.
+
+However, the overall deployment process in EKS via Helm is significantly easier due to Kubernetes’ robust orchestration capabilities. Once the plugins are added, further management of the SonarQube instance in EKS will require fewer manual interventions, making the long-term maintenance smoother.
+
+Conclusion
+While migrating from ECS to EKS and switching from Docker-based SonarQube to Helm may feel like a slight regression in terms of plugin management flexibility, the broader advantages of running SonarQube in Kubernetes should outweigh these challenges. With a properly configured Helm chart and the values.yaml file set up, managing SonarQube and its plugins in EKS becomes straightforward.
