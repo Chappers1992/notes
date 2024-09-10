@@ -56,5 +56,98 @@ In our previous ECS setup, adding plugins was more flexible due to Docker’s ab
 
 However, the overall deployment process in EKS via Helm is significantly easier due to Kubernetes’ robust orchestration capabilities. Once the plugins are added, further management of the SonarQube instance in EKS will require fewer manual interventions, making the long-term maintenance smoother.
 
+
+
+
+Deploying a New Version of the SonarQube Helm Chart
+Overview
+This document outlines the process of deploying a new version of the SonarQube Helm chart, first in the test environment (Unity-Tooling Test Cluster), and subsequently promoting it for production use. The process ensures that Helm charts are internally managed, preventing reliance on potentially altered external sources.
+
+The steps also cover deploying the chart to EKS using Unity, a UI-based platform that abstracts Terraform, facilitating infrastructure deployment to AWS.
+
+Prerequisites
+Access to the GitLab repository for the SonarQube Helm chart.
+Permissions to update the .gitlab-ci.yml file and trigger the pipeline.
+Access to Unity for deploying infrastructure on AWS.
+Understanding of our CI/CD pipeline, Unity, and Helm chart deployment processes.
+Process for Deploying a New Version of the Helm Chart
+1. Update the .gitlab-ci.yml File
+To deploy a new version of the SonarQube Helm chart, you must update the CHART_VERSION in the .gitlab-ci.yml file:
+
+Locate the CHART_VERSION variable in the .gitlab-ci.yml file.
+Set CHART_VERSION to the desired version to deploy.
+This change triggers a pipeline that:
+
+Pulls the new chart version from the external repository.
+Republishes the chart to our internal Artifactory helm-incubator-local for testing.
+Runs vulnerability scans.
+Promotes the chart to the helm-stable-local repository for production.
+2. Pipeline Breakdown
+The pipeline follows these stages:
+
+Publish Helm Chart to Test: Publish the chart to helm-incubator-local for testing in Unity.
+Scan: Use trivy to scan the chart for vulnerabilities.
+Promote Helm Chart to Production: After validation, promote the chart to helm-stable-local for production deployment.
+2.1. Publish Helm Chart for Testing
+In the publish-helm stage, the pipeline repackages the chart and publishes it to the helm-incubator-local repository for testing.
+
+yaml
+Copy code
+publish-helm:
+  stage: publish
+  script:
+    - echo "Pulling SonarQube CHART_VERSION from the external repository..."
+    - curl -o "sonarqube-<CHART_VERSION>.tgz" $EXTERNAL_ARTIFACTORY_URL
+    - echo "Publishing to helm-incubator-local for testing..."
+    - curl -vLO $UNITY_ARTIF_HELM_INCUBATOR_LOCAL_URL/$CHART_NAME
+    - curl -vu "$UNITY_ARTIF_USERNAME:$UNITY_ARTIF_TOKEN" -X PUT -T $CHART_NAME $UNITY_ARTIF_HELM_INCUBATOR_LOCAL_URL/$CHART_NAME
+2.2. Scan the Chart for Vulnerabilities
+In the scan stage, trivy scans the Helm chart for vulnerabilities. The results are exported in SARIF format for further analysis.
+
+yaml
+Copy code
+scan:
+  stage: scan
+  script:
+    - echo "{ \"evidence\": [{\"name\": \"Unity Deploy Resource Trivy Scan Results\"}] }" > ./scan-result.sarif
+    - Submit scan results for review
+2.3. Promote the Helm Chart to Production
+After testing is completed, the chart is promoted to the helm-stable-local repository for production deployment.
+
+yaml
+Copy code
+publish-helm-release:
+  stage: promote
+  script:
+    - echo "Promoting SonarQube Chart $CHART_VERSION to helm-stable-local for production..."
+    - curl -vLO $UNITY_ARTIF_HELM_STABLE_LOCAL_URL/$CHART_NAME
+    - curl -vu "$UNITY_ARTIF_USERNAME:$UNITY_ARTIF_TOKEN" -X PUT -T $CHART_NAME $UNITY_ARTIF_HELM_STABLE_LOCAL_URL/$CHART_NAME
+3. Verify Values Files
+Before proceeding to deploy the new chart version, ensure that no new values have been added to the Helm values.yaml files that require specific settings. This check is essential to ensure the chart behaves as expected in the new environment.
+
+4. Deploy the Chart to EKS via Unity
+Once the artifact is published to the helm-incubator-local repository, follow these steps to deploy the chart to the EKS cluster via Unity:
+
+Open Unity: Navigate to Unity, which is our UI-based platform that obfuscates Terraform and deploys infrastructure to AWS.
+
+Navigate to Tooling-SonarQube Topology:
+
+In Unity, go to the Unity-Tooling Project.
+Under the DEV topology definition, locate the tooling-sonarqube topology.
+Update the Helm Chart Version:
+
+In the tooling-sonarqube topology, find the sonarqube_helm_chart EKS_HELM_INSTALL resource.
+Update the HELM CHART VERSION to the new version that was published to helm-incubator-local.
+Execute Helm Install:
+
+Once the version is updated, execute the sonarqube-helm-install strategy.
+This will trigger a Helm install using the newly published chart version in the test environment.
+5. Final Production Deployment
+Once testing is complete, and the chart is validated, you can promote the chart to production by following the pipeline to push it to helm-stable-local. This repository is used for production deployments, ensuring the artifact used is verified.
+
+Additional Notes
+Always verify that there are no critical vulnerabilities before promoting the Helm chart to production.
+Testing the new version in the Unity-Tooling Test Cluster is crucial before making the version available for production use.
+Make sure to double-check any new values that may have been added in the values.yaml files.
 Conclusion
 While migrating from ECS to EKS and switching from Docker-based SonarQube to Helm may feel like a slight regression in terms of plugin management flexibility, the broader advantages of running SonarQube in Kubernetes should outweigh these challenges. With a properly configured Helm chart and the values.yaml file set up, managing SonarQube and its plugins in EKS becomes straightforward.
