@@ -1,0 +1,72 @@
+# Setting the namespace for deployment
+namespaceOverride: monitoring
+
+# Pushgateway is disabled (not collecting metrics from short-lived jobs)
+pushgateway:
+  enabled: false
+
+# Alertmanager integration is disabled (not sending alerts)
+alertmanager:
+  enabled: false
+
+# Prometheus server configurations (scraping and relabeling)
+server:
+  # Custom scraping configurations
+  extraScrapeConfigs:
+    # Relabeling to add metadata to scraped metrics
+    relabel_configs:
+      # Adding cluster information
+      - target_label: __cortex_prom_cluster
+        replacement: unity-tooling-cluster2_dev
+      
+      # Adding replica information
+      - target_label: __cortex_prom_replica
+        replacement: unity-tooling-cluster2_dev_${HOSTNAME}
+      
+      # Adding application-specific information
+      - target_label: AppID
+        replacement: APP02861
+      - target_label: AppName
+        replacement: unity-tooling
+      
+      # Adding AWS-specific labels
+      - target_label: aws.account
+        replacement: trp-shared-dev
+      - target_label: aws.region
+        replacement: us-east-1
+      
+      # Adding cluster and environment information
+      - target_label: cluster
+        replacement: unity-tooling-cluster2-dev
+      - target_label: env
+        replacement: dev
+
+# Prometheus instance configurations
+prometheus:
+  prometheusSpec:
+    # This disables Helm defaults for PodMonitor selection
+    podMonitorSelectorNilUsesHelmValues: false
+
+    # No specific namespace or pods are selected for monitoring
+    podMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+
+    # External labels applied to all metrics (used to identify metrics globally)
+    externalLabels:
+      __cortex_prom_cluster: unity-tooling-cluster2_dev
+      __cortex_prom_replica: unity-tooling-cluster2_dev_${HOSTNAME}
+      AppID: APP02861
+      AppName: unity-tooling
+      aws.account: trp-shared-dev
+      aws.region: us-east-1
+      cluster: unity-tooling-cluster2_dev
+      env: dev
+
+    # Remote write configuration (sending metrics to Cortex)
+    remoteWrite:
+      - url: https://cortex-dist-sb.us-east-1.oss-monitoring.trp-deployment-np.awstrp.net/api/v1/push
+        queueConfig:
+          maxShards: 10  # Controls the number of concurrent metric batches being sent
+        sendExemplars: true  # Send traces or logs tied to specific metrics
+        tlsConfig:
+          insecureSkipVerify: true  # Skipping TLS verification (not recommended for production)
