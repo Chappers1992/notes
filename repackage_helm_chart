@@ -1,0 +1,47 @@
+#!/bin/bash
+
+chart_name=$1
+chart_version=$2
+remove_dependency=$3
+prometheus_community=$4
+remoterepo=$5
+
+publish_url="$UNITY_ARTIF_HELM_INCUBATOR_LOCAL_URL/$CI_PROJECT_TITLE/${chart_name}/"
+
+echo "Pulling ${chart_name}-${chart_version}.tgz from ${prometheus_community}"
+
+curl -u "$UNITY_ARTIF_USERNAME:$UNITY_ARTIF_SNAPSHOT_TOKEN" -o ${chart_name}-${chart_version}-full.tgz "${prometheus_community}/${chart_name}-${chart_version}-full.tgz"
+
+echo "Repackaging into the individual chart"
+tar -xzf ${chart_name}-${chart_version}-full.tgz
+cp -r prometheus-community-helm-charts*/charts/${chart_name} .
+
+cd ${chart_name}
+
+if [[ -n "$remove_dependency" ]]; then
+  IFS=',' read -ra deps <<< "$remove_dependency"
+  for dep in "${deps[@]}"; do
+    yq eval -i ".dependencies[] |= select(.name != \"$dep\")" Chart.yaml
+  done
+fi
+
+for dep in $(yq eval '.dependencies[].name' Chart.yaml); do
+  if [[ ! "$remove_dependency" =~ "$dep" ]]; then
+    echo "Copying $dep chart to charts/ directory"
+    cp -r ../prometheus-community-helm-charts*/charts/$dep ./charts/
+  fi
+done
+
+yq eval -i ".dependencies[] |= select(.repository != null).repository = \"$remoterepo\"" Chart.yaml
+
+cat Chart.yaml
+
+helm dependency update
+
+cd ..
+
+tar -czf ${chart_name}-${chart_version}.tgz ${chart_name}
+
+echo "Publishing ${chart_name}-${chart_version}.tgz to ${publish_url}"
+
+curl -vu "$UNITY_ARTIF_USERNAME:$UNITY_ARTIF_SNAPSHOT_TOKEN" -X PUT -T ${chart_name}-${chart_version}.tgz ${publish_url}
