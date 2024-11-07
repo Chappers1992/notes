@@ -1,0 +1,41 @@
+/**
+ * Only allowed to deploy when
+ * 1. Valid CHG
+ * 2. INC + Open BTG for project/user
+ */
+private void productionCheck(EnvironmentType targetEnvironmentType, String userName, Long projectId, String snow) {
+    if (targetEnvironmentType.isProd()) {
+        DeploymentFolioProjectDto deploymentFolioProjectDto = configurationManagementRemoteService.getDeploymentFolioProjectDto(projectId);
+        boolean btg = ldapRemoteService.isInBtgGroup(userName, deploymentFolioProjectDto.getProjectShortName());
+        SnowChangeRequestDto snowChangeRequestDto = snowService.snowChangeRequest(snow, projectId, btg);
+
+        log.info("productionCheck-snow, projectId = {}, userName = {}, snow = {}, snowChangeRequestDto = {}", projectId, userName, snow, snowChangeRequestDto);
+
+        if (snowChangeRequestDto != null) {
+            log.info("productionCheck-snow#not-null, projectId = {}, userName = {}, snow = {}, snowChangeRequestDto = {}", projectId, userName, snow, snowChangeRequestDto);
+
+            if (snowChangeRequestDto.isChg()) {
+                log.info("productionCheck-snow#chg, projectId = {}, userName = {}, snow = {}, snowChangeRequestDto = {}", projectId, userName, snow, snowChangeRequestDto);
+
+                if (snowChangeRequestDto.isValid()) {
+                    log.info("productionCheck-snow#chg-valid, projectId = {}, userName = {}, snow = {}, snowChangeRequestDto = {}", projectId, userName, snow, snowChangeRequestDto);
+                } else {
+                    log.warn("Invalid CHG request: projectId = {}, userName = {}, snow = {}, snowChangeRequestDto = {}", projectId, userName, snow, snowChangeRequestDto);
+                    throw new DeploymentServiceException("User is not allowed to perform production release due to invalid CHG request. Please provide a valid change request.");
+                }
+            } else if (snowChangeRequestDto.isInc()) {
+                log.info("productionCheck-snow#inc, projectId = {}, userName = {}, snow = {}, snowChangeRequestDto = {}", projectId, userName, snow, snowChangeRequestDto);
+                checkBtg(userName, projectId, deploymentFolioProjectDto.getProjectShortName(), snow, snowChangeRequestDto, btg);
+            } else {
+                log.warn("Neither CHG nor INC provided: projectId = {}, userName = {}, snow = {}, snowChangeRequestDto = {}", projectId, userName, snow, snowChangeRequestDto);
+                throw new DeploymentServiceException("User is not allowed to perform production release. Please provide a correct change or incident request.");
+            }
+        } else {
+            log.warn("No SnowChangeRequestDto found (snowChangeRequestDto is null): projectId = {}, userName = {}, snow = {}", projectId, userName, snow);
+            throw new DeploymentServiceException("User is not allowed to perform production release as there is no change or incident request available.");
+        }
+    } else {
+        log.info("productionCheck-env check failed, current environment = {}, prod = false", currentEnvironmentType);
+        throw new DeploymentServiceException("Not able to deploy to production from lower Unity Deploy environments.");
+    }
+}
