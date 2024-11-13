@@ -1,0 +1,9 @@
+import csv
+from datetime import datetime, timedelta
+three_months_ago = datetime.now() - timedelta(days=90)
+
+filtered_users = [
+    user for user in users 
+    if datetime.strptime(user["last_logged_in"], "%Y-%m-%dT%H:%M:%S.%fZ") > three_months_ago
+]
+
