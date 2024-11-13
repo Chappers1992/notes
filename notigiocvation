@@ -1,0 +1,28 @@
+Here are draft messages for both the email and the Teams notification:
+
+Email Notification:
+
+Subject: Action Required: Transition to OpenID-SSO for Artifactory Access
+
+Dear Artifactory Users,
+
+We are reaching out to inform you of an upcoming change to Artifactory’s login method. OpenID-SSO has been enabled for authentication in production and is now available alongside the existing SAML SSO method. This transition is necessary as the Authentication team at T. Rowe Price will soon end support for SAML SSO. After [specific date], SAML SSO will be disabled for Artifactory access.
+
+What You Need to Do: Please begin using OpenID-SSO to log into Artifactory at your earliest convenience. We highly recommend testing this method now to ensure seamless access after SAML SSO is disabled.
+
+Reporting Issues: If you encounter any issues with OpenID-SSO, please submit a Jira ticket to the Developer Services Group for resolution. This will allow us to address any challenges prior to the final cutover.
+
+Thank you for your attention to this transition. We appreciate your cooperation in making this a smooth change.
+
+Best regards,
+[Your Name/Department]
+
+Teams Channel Notification:
+
+🔔 Important Update on Artifactory Access
+
+Starting today, OpenID-SSO is enabled as the primary login method for Artifactory. Please use OpenID-SSO instead of SAML SSO, as SAML will be unsupported and disabled after [specific date].
+
+➡️ Action Required: Test OpenID-SSO access within the next two weeks to confirm it works for you. Any issues? Raise a Jira ticket with Developer Services Group for assistance.
+
+Thank you for helping ensure a smooth transition!
